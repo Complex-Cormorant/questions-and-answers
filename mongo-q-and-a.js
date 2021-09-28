@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const db = require('./index.js');
 mongoose.Promise = global.Promise;
 
+// const photoSchema = new mongoose.Schema(
+//   {
+//   photo_id: { type: Number, unique: true }
+//   photo_url: String
+//   }
+// )
+
 const answerSchema = new mongoose.Schema(
   {
   answer_id: { type: Number, unique: true },
@@ -10,6 +17,8 @@ const answerSchema = new mongoose.Schema(
   helpfulness: Number,
   reported: Boolean,
   question_id: Number,
+  email: String,
+  photos: [String]
   },
   {
     timestamps: true,
@@ -24,6 +33,7 @@ const questionSchema = new mongoose.Schema(
   question_helpfulness: Number,
   question_reported: Boolean,
   product_id: Number,
+  email: String,
   answers: [answerSchema],
   },
   {
@@ -33,5 +43,6 @@ const questionSchema = new mongoose.Schema(
 
 const Question = mongoose.model('Question', questionSchema);
 const Answer = mongoose.model('Answer', answerSchema);
+// const Photo = mongoose.model('Photo', photoSchema);
 
 module.exports = { Question, Answer };
