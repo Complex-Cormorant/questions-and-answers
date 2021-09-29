@@ -18,6 +18,7 @@ const answerSchema = new mongoose.Schema(
   reported: Boolean,
   question_id: Number,
   email: String,
+  date: Date,
   photos: [String]
   },
   {
@@ -34,6 +35,7 @@ const questionSchema = new mongoose.Schema(
   question_reported: Boolean,
   product_id: Number,
   email: String,
+  date: Date,
   answers: [answerSchema],
   },
   {

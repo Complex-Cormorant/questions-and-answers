@@ -1,5 +1,5 @@
 const db = require('./index.js');
-const { Question, Answer }= require('./Blog.js');
+const { Question, Answer }= require('./mongo-q-and-a.js');
 
 const samplePosts = [
   {
