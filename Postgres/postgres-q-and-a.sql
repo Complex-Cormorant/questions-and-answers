@@ -10,7 +10,7 @@ CREATE TABLE questions(
 );
 
 CREATE TABLE answers(
-  answers_id SERIAL NOT NULL PRIMARY KEY,
+  answer_id SERIAL NOT NULL PRIMARY KEY,
   question_id INT NOT NULL REFERENCES questions (question_id),
   answer_body VARCHAR(1000) NOT NULL,
   answer_date BIGINT NOT NULL,
@@ -21,8 +21,8 @@ CREATE TABLE answers(
 );
 
 CREATE TABLE photos(
-  photos_id SERIAL NOT NULL PRIMARY KEY,
-  answer_id INT NOT NULL REFERENCES answers (answers_id),
+  photo_id SERIAL NOT NULL PRIMARY KEY,
+  answer_id INT NOT NULL REFERENCES answers (answer_id),
   photo_url VARCHAR(2083) NOT NULL
 );
 
