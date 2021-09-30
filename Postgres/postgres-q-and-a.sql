@@ -2,7 +2,7 @@ CREATE TABLE questions(
   question_id SERIAL NOT NULL PRIMARY KEY,
   product_id INT NOT NULL,
   question_body VARCHAR(1000) NOT NULL,
-  question_date DATE NOT NULL,
+  question_date INTEGER NOT NULL,
   asker_name VARCHAR(60) NOT NULL,
   email VARCHAR(60) NOT NULL,
   reported BOOLEAN NOT NULL DEFAULT false,
@@ -13,12 +13,11 @@ CREATE TABLE answers(
   answers_id SERIAL NOT NULL PRIMARY KEY,
   question_id INT NOT NULL REFERENCES questions (question_id),
   answer_body VARCHAR(1000) NOT NULL,
-  answer_date DATE NOT NULL,
+  answer_date INTEGER NOT NULL,
   answerer_name VARCHAR(60) NOT NULL,
   email VARCHAR(60) NOT NULL,
   reported BOOLEAN DEFAULT false,
   helpfulness SMALLINT DEFAULT 0
-  photos VARCHAR [5]
 );
 
 CREATE TABLE photos(
