@@ -21,3 +21,7 @@ app.listen(port, () => {
 
 app.get('/qa/questions', db.getQuestions)
 app.get('/qa/questions/:question_id/answers', db.getAnswers)
+app.put('/qa/questions/:question_id/helpful', db.markQuestionHelpful)
+app.put('/qa/questions/:question_id/report', db.reportQuestion)
+app.put('/qa/answers/:answer_id/helpful', db.markAnswerHelpful)
+app.put('/qa/answers/:answer_id/report', db.reportAnswer)

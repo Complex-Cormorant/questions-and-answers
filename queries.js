@@ -92,11 +92,31 @@ const getAnswers = (request, response) => {
   })
 }
 
-const getPhotos = (request, response) => {
+const reportQuestion = (request, response) => {
+  const id = request.params.question_id;
+  response.sendStatus(204);
+}
 
+const markQuestionHelpful = (request, response) => {
+  const id = request.params.question_id;
+  response.sendStatus(204);
+}
+
+const reportAnswer = (request, response) => {
+  const id = request.params.answer_id;
+  response.sendStatus(204);
+}
+
+const markAnswerHelpful = (request, response) => {
+  const id = request.params.answer_id;
+  response.sendStatus(204);
 }
 
 module.exports = {
   getQuestions,
-  getAnswers
+  getAnswers,
+  reportQuestion,
+  markQuestionHelpful,
+  reportAnswer,
+  markAnswerHelpful
 }
