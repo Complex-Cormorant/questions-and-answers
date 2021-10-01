@@ -71,14 +71,32 @@ const getQuestions = (request, response) => {
   const count = request.query.count || 5;
   const page = request.query.page || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT * FROM questions WHERE product_id=$1 AND reported='f' ORDER BY helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+  pool.query(`SELECT question_id, question_body, to_timestamp(cast(question_date/1000 as bigint))::date AS question_date, asker_name, question_helpfulness, reported FROM questions WHERE product_id=$1 AND reported='f' ORDER BY question_helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    response.status(200).json({product_id: id, results: results.rows})
   })
 }
 
+const getAnswers = (request, response) => {
+  const id = request.params.question_id;
+  const count = Number(request.query.count) || 5;
+  const page = Number(request.query.page) || 1;
+  const offset = count * (page - 1);
+  pool.query(`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness FROM answers WHERE answer_id=$1 AND reported='f' ORDER BY helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json({question: id, page, count, results: results.rows})
+  })
+}
+
+const getPhotos = (request, response) => {
+
+}
+
 module.exports = {
-  getQuestions
+  getQuestions,
+  getAnswers
 }

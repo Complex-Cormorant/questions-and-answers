@@ -6,7 +6,7 @@ CREATE TABLE questions(
   asker_name VARCHAR(60) NOT NULL,
   email VARCHAR(60) NOT NULL,
   reported BOOLEAN NOT NULL DEFAULT false,
-  helpfulness SMALLINT DEFAULT 0
+  question_helpfulness SMALLINT DEFAULT 0
 );
 
 CREATE TABLE answers(

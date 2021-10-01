@@ -20,3 +20,4 @@ app.listen(port, () => {
 })
 
 app.get('/qa/questions', db.getQuestions)
+app.get('/qa/questions/:question_id/answers', db.getAnswers)
