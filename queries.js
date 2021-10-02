@@ -94,22 +94,42 @@ const getAnswers = (request, response) => {
 
 const reportQuestion = (request, response) => {
   const id = request.params.question_id;
-  response.sendStatus(204);
+  pool.query(`UPDATE questions SET reported = 't' WHERE question_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
+  })
 }
 
 const markQuestionHelpful = (request, response) => {
   const id = request.params.question_id;
-  response.sendStatus(204);
+  pool.query(`UPDATE questions SET question_helpfulness = question_helpfulness+1 WHERE question_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
+  })
 }
 
 const reportAnswer = (request, response) => {
   const id = request.params.answer_id;
-  response.sendStatus(204);
+  pool.query(`UPDATE answers SET reported = 't' WHERE answer_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
+  })
 }
 
 const markAnswerHelpful = (request, response) => {
   const id = request.params.answer_id;
-  response.sendStatus(204);
+  pool.query(`UPDATE answers SET helpfulness = helpfulness+1 WHERE answer_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
+  })
 }
 
 module.exports = {
