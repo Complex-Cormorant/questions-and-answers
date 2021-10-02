@@ -71,7 +71,7 @@ const getQuestions = (request, response) => {
   const count = request.query.count || 5;
   const page = request.query.page || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT question_id, question_body, to_timestamp(cast(question_date/1000 as bigint))::date AS question_date, asker_name, question_helpfulness, reported FROM questions WHERE product_id=$1 AND reported='f' ORDER BY question_helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+  pool.query(`SELECT questions.question_id, question_body, to_timestamp(cast(question_date/1000 as bigint)) AS question_date, asker_name, question_helpfulness, questions.reported, JSON_OBJECT_AGG(answer_id, json_build_object('id', answer_id, 'body', answer_body, 'date', to_timestamp(cast(answer_date/1000 as bigint)), 'answerer_name', answerer_name, 'helpfulness', helpfulness)) answers FROM questions INNER JOIN answers USING (question_id) WHERE product_id=$1 AND questions.reported='f' GROUP BY questions.question_id ORDER BY question_helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
