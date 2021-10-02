@@ -71,7 +71,12 @@ const getQuestions = (request, response) => {
   const count = request.query.count || 5;
   const page = request.query.page || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT questions.question_id, question_body, to_timestamp(cast(question_date/1000 as bigint)) AS question_date, asker_name, question_helpfulness, questions.reported, COALESCE(JSON_OBJECT_AGG(answer_id, json_build_object('id', answer_id, 'body', answer_body, 'date', to_timestamp(cast(answer_date/1000 as bigint)), 'answerer_name', answerer_name, 'helpfulness', helpfulness)) FILTER (WHERE answer_id IS NOT NULL), '{}'::JSON) answers FROM questions LEFT JOIN answers USING (question_id) WHERE product_id=$1 AND questions.reported='f' GROUP BY questions.question_id ORDER BY question_helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+  pool.query(`SELECT questions.question_id, question_body, to_timestamp(cast(question_date/1000 as bigint))::date AS question_date, asker_name, question_helpfulness, questions.reported, COALESCE(JSON_OBJECT_AGG(answer_id, json_build_object('id', answer_id, 'body', answer_body, 'date', to_timestamp(cast(answer_date/1000 as bigint)), 'answerer_name', answerer_name, 'helpfulness', helpfulness, 'photos', ARRAY[]::json[])) FILTER (WHERE answer_id IS NOT NULL), '{}'::JSON) answers
+  FROM questions LEFT JOIN answers USING (question_id)
+  WHERE product_id=$1 AND questions.reported='f'
+  GROUP BY questions.question_id
+  ORDER BY question_helpfulness DESC
+  LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
@@ -89,6 +94,28 @@ const getAnswers = (request, response) => {
       throw error
     }
     response.status(200).json({question: id, page, count, results: results.rows})
+  })
+}
+
+const postQuestion = (request, response) => {
+  const id = request.params.question_id;
+  //Fill this in
+  pool.query(`UPDATE questions SET reported = 't' WHERE question_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
+  })
+}
+
+const postAnswer = (request, response) => {
+  const id = request.params.question_id;
+  //Fill this in
+  pool.query(`UPDATE questions SET reported = 't' WHERE question_id=$1`, [id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.sendStatus(204);
   })
 }
 
@@ -135,8 +162,12 @@ const markAnswerHelpful = (request, response) => {
 module.exports = {
   getQuestions,
   getAnswers,
+  postQuestion,
+  postAnswer,
   reportQuestion,
   markQuestionHelpful,
   reportAnswer,
   markAnswerHelpful
 }
+
+// SELECT COALESCE(ARRAY_AGG(json_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::json[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 GROUP BY answers.answer_id
