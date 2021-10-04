@@ -93,15 +93,14 @@ const getQuestions = (request, response) => {
               'date', to_timestamp(cast(answer_date/1000 as bigint)),
               'answerer_name', answerer_name,
               'helpfulness', helpfulness,
-              'photos', COALESCE(array_agg(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
+              'photos', COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
             ) answers
         FROM questions q
         LEFT JOIN answers a USING (question_id) LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f'
-        GROUP BY question_id, a.answer_id
+        GROUP BY question_id, a.answer_id LIMIT $2 OFFSET $3
     ) a
-    GROUP BY question_id, question_body, question_date, asker_name,question_helpfulness, reported
-  ) a
-  LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+    GROUP BY question_id, question_body, question_date, asker_name, question_helpfulness, reported
+  ) a`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
@@ -114,7 +113,13 @@ const getAnswers = (request, response) => {
   const count = Number(request.query.count) || 5;
   const page = Number(request.query.page) || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(json_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::json[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 AND reported='f' GROUP BY answers.answer_id ORDER BY helpfulness DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
+  pool.query(`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(jsonb_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::jsonb[]) photos
+  FROM answers LEFT JOIN photos
+  USING (answer_id)
+  WHERE question_id=$1 AND reported='f'
+  GROUP BY answers.answer_id
+  ORDER BY helpfulness
+  DESC LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
@@ -253,4 +258,8 @@ FROM (
   GROUP BY questions.question_id
   ORDER BY question_helpfulness DESC
   LIMIT $2 OFFSET $3`
+*/
+
+/* Old answers query
+`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(jsonb_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::jsonb[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 AND reported='f' GROUP BY answers.answer_id ORDER BY helpfulness DESC LIMIT $2 OFFSET $3`
 */
