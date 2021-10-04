@@ -143,13 +143,14 @@ const postAnswer = (request, response) => {
   const email = request.body.email;
   const date = Date.now();
   const photos = request.body.photos || [];
-  pool.query(`INSERT INTO answers (question_id, answer_body, answer_date, answerer_name, email) VALUES ($1, $2, $3, $4, $5)`, [id, body, date, name, email], (error, results) => {
+  pool.query(`INSERT INTO answers (question_id, answer_body, answer_date, answerer_name, email) VALUES ($1, $2, $3, $4, $5) RETURNING answer_id`, [id, body, date, name, email], (error, results) => {
     if (error) {
       throw error
     }
+    const ans_id = results.rows[0].answer_id;
     for (let i = 0; i < photos.length; i++) {
       const url = photos[i];
-      pool.query(`INSERT INTO photos (answer_id, photo_url) VALUES (lastval(), $1)`, [url], (error, results) => {
+      pool.query(`INSERT INTO photos (answer_id, photo_url) VALUES ($1, $2)`, [ans_id, url], (error, results) => {
         if (error) {
           throw error
         }
