@@ -123,24 +123,39 @@ const getAnswers = (request, response) => {
 }
 
 const postQuestion = (request, response) => {
-  const id = request.params.question_id;
-  //Fill this in
-  pool.query(`UPDATE questions SET reported = 't' WHERE question_id=$1`, [id], (error, results) => {
+  const id = request.body.product_id;
+  const name = request.body.name;
+  const body = request.body.body;
+  const email = request.body.email;
+  const date = Date.now();
+  pool.query(`INSERT INTO questions (product_id, question_body, question_date, asker_name, email) VALUES ($1, $2, $3, $4, $5)`, [id, body, date, name, email], (error, results) => {
     if (error) {
       throw error
     }
-    response.sendStatus(204);
+    response.sendStatus(201);
   })
 }
 
 const postAnswer = (request, response) => {
   const id = request.params.question_id;
-  //Fill this in
-  pool.query(`UPDATE questions SET reported = 't' WHERE question_id=$1`, [id], (error, results) => {
+  const name = request.body.name;
+  const body = request.body.body;
+  const email = request.body.email;
+  const date = Date.now();
+  const photos = request.body.photos || [];
+  pool.query(`INSERT INTO answers (question_id, answer_body, answer_date, answerer_name, email) VALUES ($1, $2, $3, $4, $5)`, [id, body, date, name, email], (error, results) => {
     if (error) {
       throw error
     }
-    response.sendStatus(204);
+    for (let i = 0; i < photos.length; i++) {
+      const url = photos[i];
+      pool.query(`INSERT INTO photos (answer_id, photo_url) VALUES (lastval(), $1)`, [url], (error, results) => {
+        if (error) {
+          throw error
+        }
+      });
+    }
+    response.sendStatus(201);
   })
 }
 
