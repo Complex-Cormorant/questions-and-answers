@@ -71,16 +71,41 @@ const getQuestions = (request, response) => {
   const count = request.query.count || 5;
   const page = request.query.page || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT questions.question_id, question_body, to_timestamp(cast(question_date/1000 as bigint))::date AS question_date, asker_name, question_helpfulness, questions.reported, COALESCE(JSON_OBJECT_AGG(answer_id, json_build_object('id', answer_id, 'body', answer_body, 'date', to_timestamp(cast(answer_date/1000 as bigint)), 'answerer_name', answerer_name, 'helpfulness', helpfulness, 'photos', ARRAY[]::json[])) FILTER (WHERE answer_id IS NOT NULL), '{}'::JSON) answers
-  FROM questions LEFT JOIN answers USING (question_id)
-  WHERE product_id=$1 AND questions.reported='f'
-  GROUP BY questions.question_id
-  ORDER BY question_helpfulness DESC
+  pool.query(`SELECT $1::text product_id, (jsonb_agg(js_object)) results
+  FROM (
+    SELECT
+      jsonb_build_object(
+        'question_id', question_id,
+        'question_body', question_body,
+        'question_date', to_timestamp(cast(question_date/1000 as bigint)),
+        'asker_name', asker_name,
+        'question_helpfulness', question_helpfulness,
+        'reported', reported,
+        'answers', COALESCE(jsonb_object_agg(answer_id, answers) FILTER (WHERE a.answer_id IS NOT NULL), '{}'::jsonb)
+      ) js_object
+      FROM (
+        SELECT
+            q.*,
+            answer_id,
+            jsonb_build_object(
+              'id', answer_id,
+              'body', answer_body,
+              'date', to_timestamp(cast(answer_date/1000 as bigint)),
+              'answerer_name', answerer_name,
+              'helpfulness', helpfulness,
+              'photos', COALESCE(array_agg(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
+            ) answers
+        FROM questions q
+        LEFT JOIN answers a USING (question_id) LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f'
+        GROUP BY question_id, a.answer_id
+    ) a
+    GROUP BY question_id, question_body, question_date, asker_name,question_helpfulness, reported
+  ) a
   LIMIT $2 OFFSET $3`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json({product_id: id, results: results.rows})
+    response.status(200).json(results.rows[0])
   })
 }
 
@@ -170,4 +195,46 @@ module.exports = {
   markAnswerHelpful
 }
 
-// SELECT COALESCE(ARRAY_AGG(json_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::json[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 GROUP BY answers.answer_id
+// SELECT COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::varchar[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 GROUP BY answers.answer_id
+
+/*
+SELECT jsonb_pretty(jsonb_agg(js_object)) results
+FROM (
+  SELECT
+    jsonb_build_object(
+      'question_id', question_id,
+      'question_body', question_body,
+      'question_date', to_timestamp(cast(question_date/1000 as bigint)),
+      'asker_name', asker_name,
+      'question_helpfulness', question_helpfulness,
+      'reported', reported,
+      'answers', COALESCE(jsonb_agg(answers) FILTER (WHERE a.answer_id IS NOT NULL), '{}'::jsonb)
+    ) js_object
+    FROM (
+      SELECT
+          q.*,
+          answer_id,
+          jsonb_build_object(
+            'id', answer_id,
+            'body', answer_body,
+            'date', to_timestamp(cast(answer_date/1000 as bigint)),
+            'answerer_name', answerer_name,
+            'helpfulness', helpfulness,
+            'photos', COALESCE(array_agg(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
+          ) answers
+      FROM questions q
+      LEFT JOIN answers a USING (question_id) LEFT JOIN photos p USING (answer_id) WHERE product_id=1
+      GROUP BY question_id, a.answer_id
+  ) a
+  GROUP BY question_id, question_body, question_date, asker_name,question_helpfulness, reported
+) a LIMIT 10;
+*/
+
+/* Old questions query
+`SELECT questions.question_id, question_body, to_timestamp(cast(question_date/1000 as bigint))::date AS question_date, asker_name, question_helpfulness, questions.reported, COALESCE(JSON_OBJECT_AGG(answer_id, json_build_object('id', answer_id, 'body', answer_body, 'date', to_timestamp(cast(answer_date/1000 as bigint)), 'answerer_name', answerer_name, 'helpfulness', helpfulness, 'photos', ARRAY[]::json[])) FILTER (WHERE answer_id IS NOT NULL), '{}'::JSON) answers
+  FROM questions LEFT JOIN answers USING (question_id)
+  WHERE product_id=$1 AND questions.reported='f'
+  GROUP BY questions.question_id
+  ORDER BY question_helpfulness DESC
+  LIMIT $2 OFFSET $3`
+*/
