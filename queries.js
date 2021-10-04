@@ -93,13 +93,14 @@ const getQuestions = (request, response) => {
               'date', to_timestamp(cast(answer_date/1000 as bigint)),
               'answerer_name', answerer_name,
               'helpfulness', helpfulness,
+              'reported', a.reported,
               'photos', COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
             ) answers
         FROM questions q
         LEFT JOIN answers a USING (question_id) LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f'
-        GROUP BY question_id, a.answer_id LIMIT $2 OFFSET $3
+        GROUP BY question_id, a.answer_id
     ) a
-    GROUP BY question_id, question_body, question_date, asker_name, question_helpfulness, reported
+    GROUP BY question_id, question_body, question_date, asker_name, question_helpfulness, reported LIMIT $2 OFFSET $3
   ) a`, [id, count, offset], (error, results) => {
     if (error) {
       throw error
