@@ -114,7 +114,7 @@ const getAnswers = (request, response) => {
   const count = Number(request.query.count) || 5;
   const page = Number(request.query.page) || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(jsonb_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::jsonb[]) photos
+  pool.query(`SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint)) AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(jsonb_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::jsonb[]) photos
   FROM answers LEFT JOIN photos
   USING (answer_id)
   WHERE question_id=$1 AND reported='f'
