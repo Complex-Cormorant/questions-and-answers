@@ -71,7 +71,7 @@ const getQuestions = (request, response) => {
   const count = request.query.count || 5;
   const page = request.query.page || 1;
   const offset = count * (page - 1);
-  pool.query(`SELECT $1::text product_id, (jsonb_agg(js_object)) results
+  pool.query(`SELECT $1::text product_id, COALESCE(jsonb_agg(js_object) FILTER (WHERE js_object IS NOT NULL), '[]'::jsonb) results
   FROM (
     SELECT
       jsonb_build_object(
@@ -80,7 +80,6 @@ const getQuestions = (request, response) => {
         'question_date', to_timestamp(cast(question_date/1000 as bigint)),
         'asker_name', asker_name,
         'question_helpfulness', question_helpfulness,
-        'reported', reported,
         'answers', COALESCE(jsonb_object_agg(answer_id, answers) FILTER (WHERE a.answer_id IS NOT NULL), '{}'::jsonb)
       ) js_object
       FROM (
@@ -97,8 +96,9 @@ const getQuestions = (request, response) => {
               'photos', COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
             ) answers
         FROM questions q
-        LEFT JOIN answers a USING (question_id) LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f' AND a.reported='f'
-        GROUP BY question_id, a.answer_id
+        LEFT JOIN answers a ON q.question_id = a.question_id AND a.reported ='f'
+        LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f'
+        GROUP BY q.question_id, a.answer_id
     ) a
     GROUP BY question_id, question_body, question_date, asker_name, question_helpfulness, reported LIMIT $2 OFFSET $3
   ) a`, [id, count, offset], (error, results) => {
@@ -264,3 +264,5 @@ FROM (
 /* Old answers query
 `SELECT answer_id, answer_body AS body, to_timestamp(cast(answer_date/1000 as bigint))::date AS date, answerer_name, helpfulness, COALESCE(ARRAY_AGG(jsonb_build_object('id', photo_id, 'url', photo_url)) FILTER (WHERE photo_id IS NOT NULL), ARRAY[]::jsonb[]) photos FROM answers LEFT JOIN photos USING (answer_id) WHERE question_id=$1 AND reported='f' GROUP BY answers.answer_id ORDER BY helpfulness DESC LIMIT $2 OFFSET $3`
 */
+
+/* SELECT questions.product_id, answers.answer_id, answers.question_id FROM answers JOIN questions USING (question_id) where questions.reported = false AND answers.reported = true ORDER BY answer_id ASC LIMIT 10; */
