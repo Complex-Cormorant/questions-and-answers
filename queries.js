@@ -1,12 +1,5 @@
+const credentials = require("./config.js");
 const { Pool, Client } = require("pg");
-
-const credentials = {
-  user: "fikri",
-  host: "localhost",
-  database: "questionsandanswers",
-  password: "fikri",
-  port: 5432,
-};
 
 const pool = new Pool(credentials);
 
@@ -92,7 +85,6 @@ const getQuestions = (request, response) => {
               'date', to_timestamp(cast(answer_date/1000 as bigint)),
               'answerer_name', answerer_name,
               'helpfulness', helpfulness,
-              'reported', a.reported,
               'photos', COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
             ) answers
         FROM questions q
@@ -266,3 +258,34 @@ FROM (
 */
 
 /* SELECT questions.product_id, answers.answer_id, answers.question_id FROM answers JOIN questions USING (question_id) where questions.reported = false AND answers.reported = true ORDER BY answer_id ASC LIMIT 10; */
+
+/* SELECT $1::text product_id, COALESCE(jsonb_agg(js_object) FILTER (WHERE js_object IS NOT NULL), '[]'::jsonb) results
+  FROM (
+    SELECT
+      jsonb_build_object(
+        'question_id', question_id,
+        'question_body', question_body,
+        'question_date', to_timestamp(cast(question_date/1000 as bigint)),
+        'asker_name', asker_name,
+        'question_helpfulness', question_helpfulness,
+        'answers', COALESCE(jsonb_object_agg(answer_id, answers) FILTER (WHERE a.answer_id IS NOT NULL), '{}'::jsonb)
+      ) js_object
+      FROM (
+        SELECT
+            q.*,
+            answer_id,
+            jsonb_build_object(
+              'id', answer_id,
+              'body', answer_body,
+              'date', to_timestamp(cast(answer_date/1000 as bigint)),
+              'answerer_name', answerer_name,
+              'helpfulness', helpfulness,
+              'photos', COALESCE(ARRAY_AGG(photo_url) FILTER (WHERE p.photo_id IS NOT NULL), ARRAY[]::varchar[])
+            ) answers
+        FROM questions q
+        LEFT JOIN answers a ON q.question_id = a.question_id AND a.reported ='f'
+        LEFT JOIN photos p USING (answer_id) WHERE product_id=$1 AND q.reported='f'
+        GROUP BY q.question_id, a.answer_id
+    ) a
+    GROUP BY question_id, question_body, question_date, asker_name, question_helpfulness, reported LIMIT $2 OFFSET $3
+  ) a */

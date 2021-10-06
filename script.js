@@ -3,11 +3,11 @@ import { sleep, check, group } from 'k6';
 
 export let options = {
   stages: [
-    { duration: '50s', target: 100 }, // below normal load
-    { duration: '100s', target: 300 }, // normal load
-    { duration: '100s', target: 500 }, // around breaking point
-    { duration: '100s', target: 1000 }, // beyond breaking point
-    { duration: '100s', target: 200 }, // scale down
+    { duration: '5s', target: 10 }, // below normal load
+    { duration: '10s', target: 50 }, // normal load
+    { duration: '10s', target: 100 }, // around breaking point
+    { duration: '10s', target: 200 }, // beyond breaking point
+    { duration: '10s', target: 50 }, // scale down
   ],
   // thresholds: {
   //   http_req_failed: ['rate<0.01'], // errors are less than 1%,
@@ -34,14 +34,14 @@ export default function () {
     let getQuestions = http.get(`http://localhost:3000/qa/questions?${product_id}`);
     check(getQuestions, {
       'is status 200': (response) => response.status === 200,
-      'is duration < 2000ms': (response) => response.timings.duration < 2000,
+      'is duration < 1000ms': (response) => response.timings.duration < 1000,
     })
     sleep(sleep_duration);
 
     let getAnswers = http.get(`http://localhost:3000/qa/questions/${question_id}/answers`);
     check(getAnswers, {
       'is status 200': (response) => response.status === 200,
-      'is duration < 2000ms': (response) => response.timings.duration < 2000,
+      'is duration < 500ms': (response) => response.timings.duration < 500,
     })
     sleep(sleep_duration);
   })
