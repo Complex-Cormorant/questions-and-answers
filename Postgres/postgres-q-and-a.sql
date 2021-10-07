@@ -5,7 +5,7 @@ CREATE TABLE questions(
   question_date BIGINT NOT NULL,
   asker_name VARCHAR(60) NOT NULL,
   email VARCHAR(60) NOT NULL,
-  reported BOOLEAN NOT NULL DEFAULT false,
+  reported BOOLEAN DEFAULT false,
   question_helpfulness SMALLINT DEFAULT 0
 );
 
